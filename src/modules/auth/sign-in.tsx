@@ -23,38 +23,15 @@ import { Form } from '@/components/ui/form';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { authCommandApi } from '@/apis/auth';
-import { AuthRequestType, AuthResponseType } from '@/types/auth';
+import { AuthRequestType } from '@/types/auth';
 import { getCookie, setTokenCookie } from '@/utils/cookie.util';
-import { COOKIE_KEYS } from '@/constant/cookie-keys.constant';
-
-// export default function Home() {
-//   const { data: session } = useSession();
-
-//   return (
-//     <main>
-//       {!session ? (
-//         <button onClick={() => signIn("google")}>Login with Google</button>
-//       ) : (
-//         <>
-//           <p>Welcome, {session.user?.name}</p>
-//           <p>Access Token: {session.accessToken}</p>
-//           <button onClick={() => signOut()}>Logout</button>
-//         </>
-//       )}
-//     </main>
-//   );
-// }
 
 export default function SignIn() {
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const [isClient, setIsClient] = useState(false);
   const { mutate: handleLogin, isPending } = useMutation({
     mutationFn: (body: AuthRequestType) => authCommandApi.login(body),
-  });
-  const { mutate: handleLoginWithGoogle } = useMutation({
-    mutationFn: ({ accessToken }: { accessToken: string }) =>
-      authCommandApi.loginWithGoogle({ accessToken }),
   });
 
   const form = useForm({
@@ -80,28 +57,14 @@ export default function SignIn() {
   };
 
   useEffect(() => {
-    if (session?.accessToken) {
-      if (!getCookie(COOKIE_KEYS.AUTH_TOKEN)) {
-        handleLoginWithGoogle(
-          { accessToken: session.accessToken },
-          {
-            onSuccess: (data) => {
-              setTokenCookie(data.accessToken);
-              toast.success('Login successful!');
-              router.push('/');
-            },
-            onError: () => {
-              setLoginError('Error when login with google !');
-            },
-          },
-        );
-      }
-    }
-  }, [session?.accessToken]);
+    setIsClient(true);
+  }, []);
 
   const handleGoogleLogin = async () => {
-    await signIn('google', { redirect: false });
+    await signIn('google', { callbackUrl: '/' });
   };
+
+  if (!isClient) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
