@@ -24,10 +24,10 @@
   },
   "include": [
     "next-env.d.ts",
-    "next-auth.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
-, "src/modules/auth/sign-in"  ],
+    ".next/types/**/*.ts",
+    "src/modules/auth/sign-in"
+  ],
   "exclude": ["node_modules"]
 }
