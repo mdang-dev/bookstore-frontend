@@ -1,7 +1,7 @@
 import { Product, ProductItems, ProductPage } from '@/types/product';
 import httpClient from '@/utils/http-client';
 
-const url = '/api/products';
+const url = '/catalog/api/products';
 
 export const productQueryApi = {
   getProductsByPageNumber: async (page: number = 1): Promise<ProductItems> => {

@@ -1,10 +1,10 @@
-import { UserResponseType } from '@/types/user';
+import { User } from '@/types/user';
 import httpClient from '@/utils/http-client';
 
-const url = '/api/users';
+const url = '/users/api/users';
 
 export const userQueryApi = {
-  getMyInfo: async (): Promise<UserResponseType> => {
+  getMyInfo: async (): Promise<User> => {
     const res = await httpClient(`${url}/me`);
     return res.data;
   },
