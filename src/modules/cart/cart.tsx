@@ -9,11 +9,22 @@ import Image from 'next/image';
 import { useCartStore } from '@/stores/cart.store';
 import { useRouter } from 'next/navigation';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { OrderModal } from './_components/order-modal';
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { DialogHeader } from '@/components/ui/dialog';
 
 export default function Cart() {
   const router = useRouter();
   const { items, total, itemCount, updateQuantity, removeFromCart, clearCart } =
     useCartStore();
+  const [open, setOpen] = useState<boolean>(false);
+  const handleToggleModal = () => setOpen((prev) => !prev);
 
   if (items.length === 0) {
     return (
@@ -211,9 +222,20 @@ export default function Cart() {
                 </div>
               </div>
 
-              <Button className="w-full mt-6" size="lg">
-                Proceed to Checkout
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full mt-6" size="lg">
+                    Proceed to Checkout
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Your Information</DialogTitle>
+                  </DialogHeader>
+                  <OrderModal />
+                </DialogContent>
+              </Dialog>
 
               <Button
                 onClick={() => router.replace('/')}

@@ -1,4 +1,4 @@
 import { UserSchemaType } from '@/schemas/user.schema';
 
-export type UserCreateRequestType = UserSchemaType;
-export type UserUpdateRequestType = UserSchemaType;
+export type CreateUserRequest = UserSchemaType;
+export type UpdateUserRequest = UserSchemaType & { id: string };

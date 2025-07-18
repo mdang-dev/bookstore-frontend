@@ -1,7 +1,7 @@
 import { AuthRequestType, AuthResponseType } from '@/types/auth';
 import httpClient from '@/utils/http-client';
 
-const url = '/api/auth';
+const url = '/auth/api/auth';
 
 export const authCommandApi = {
   login: async (body: AuthRequestType): Promise<AuthResponseType> => {

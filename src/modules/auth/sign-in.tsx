@@ -24,7 +24,7 @@ import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { authCommandApi } from '@/apis/auth';
 import { AuthRequestType } from '@/types/auth';
-import { getCookie, setTokenCookie } from '@/utils/cookie.util';
+import { setTokenCookie } from '@/utils/cookie.util';
 
 export default function SignIn() {
   const [loginError, setLoginError] = useState('');
