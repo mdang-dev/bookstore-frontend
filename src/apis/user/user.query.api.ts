@@ -1,5 +1,5 @@
 import { User } from '@/types/user';
-import httpClient from '@/utils/http-client';
+import { httpClient } from '@/utils/http-client';
 
 const url = '/users/api/users';
 

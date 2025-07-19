@@ -72,7 +72,7 @@ function calculateTotals(items: CartItem[], set: any) {
     (sum, item) => sum + (Number(item.product.price) || 0) * item.quantity,
     0,
   );
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = new Set(items.map((item) => item.product.code)).size;
 
   set({ total, itemCount });
 }
