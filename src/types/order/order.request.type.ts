@@ -1,12 +1,11 @@
 export type CreateOrderRequest = {
-  items: [
-    {
-      code: string;
-      name: string;
-      price: number;
-      quantity: number;
-    },
-  ];
+  items: {
+    code: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }[];
+
   customer: {
     name: string;
     email: string;

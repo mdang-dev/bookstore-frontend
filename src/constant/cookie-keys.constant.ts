@@ -1,4 +1,4 @@
 export const COOKIE_KEYS = {
-  AUTH_TOKEN: 'auth.token',
-  SESSION_TOKEN: 'next-auth.session-token',
+  ACCESS_TOKEN: 'auth.token',
+  REFRESH_TOKEN: 'auth.refresh.token',
 };

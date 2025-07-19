@@ -1,5 +1,5 @@
 import { Product, ProductItems, ProductPage } from '@/types/product';
-import httpClient from '@/utils/http-client';
+import { httpClient } from '@/utils/http-client';
 
 const url = '/catalog/api/products';
 

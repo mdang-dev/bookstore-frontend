@@ -1,5 +1,5 @@
 import { AuthRequestType, AuthResponseType } from '@/types/auth';
-import httpClient from '@/utils/http-client';
+import { httpClient } from '@/utils/http-client';
 
 const url = '/auth/api/auth';
 
@@ -20,6 +20,10 @@ export const authCommandApi = {
       `${url}/register`,
       body,
     );
+    return res.data;
+  },
+  logout: async (body: { refreshToken: string }): Promise<void> => {
+    const res = await httpClient.post(`${url}/logout`, body);
     return res.data;
   },
 };

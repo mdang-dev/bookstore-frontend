@@ -16,16 +16,32 @@ export default (req: NextApiRequest, res: NextApiResponse) =>
     callbacks: {
       async jwt({ token, account }) {
         if (account) {
-          const { accessToken } = await authCommandApi.loginWithGoogle({
-            accessToken: account?.access_token!,
-          });
-          const cookie = serialize(COOKIE_KEYS.AUTH_TOKEN, accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-            maxAge: 60 * 60 * 24 * 7,
-          });
-          res.setHeader('Set-Cookie', cookie);
+          const { accessToken, refreshToken } =
+            await authCommandApi.loginWithGoogle({
+              accessToken: account?.access_token!,
+            });
+
+          const refreshCookie = serialize(
+            COOKIE_KEYS.REFRESH_TOKEN,
+            refreshToken,
+            {
+              secure: process.env.NODE_ENV === 'production',
+              path: '/',
+              maxAge: 60 * 60 * 24 * 7,
+            },
+          );
+
+          const accessCookie = serialize(
+            COOKIE_KEYS.ACCESS_TOKEN,
+            accessToken,
+            {
+              secure: process.env.NODE_ENV === 'production',
+              path: '/',
+              maxAge: 60 * 15,
+            },
+          );
+
+          res.setHeader('Set-Cookie', [refreshCookie, accessCookie]);
         }
 
         return token;

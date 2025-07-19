@@ -9,22 +9,57 @@ import Image from 'next/image';
 import { useCartStore } from '@/stores/cart.store';
 import { useRouter } from 'next/navigation';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { OrderModal } from './_components/order-modal';
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { DialogHeader } from '@/components/ui/dialog';
+import OrderModal, { OrderData } from './_components/order-modal';
+import { useCallback, useState } from 'react';
+
+import { CreateOrderRequest } from '@/types/order/order.request.type';
+import { useUser } from '@/hooks/use-user';
+import { useMutation } from '@tanstack/react-query';
+import { orderCommandApi } from '@/apis/order';
+import { toast } from 'sonner';
 
 export default function Cart() {
   const router = useRouter();
   const { items, total, itemCount, updateQuantity, removeFromCart, clearCart } =
     useCartStore();
-  const [open, setOpen] = useState<boolean>(false);
-  const handleToggleModal = () => setOpen((prev) => !prev);
+  const { mutate: createOrder } = useMutation({
+    mutationFn: (body: CreateOrderRequest) => orderCommandApi.createOrder(body),
+  });
+  const { user } = useUser();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const handleOrderConfirm = (orderData: OrderData) => {
+    const createOrderRequest: CreateOrderRequest = {
+      items: items.map((item) => ({
+        code: item.product.code,
+        name: item.product.name,
+        price: Number(item.product.price),
+        quantity: item.quantity,
+      })),
+      customer: {
+        name: `${user?.firstName} ${user?.lastName}`,
+        email: user?.email ?? '',
+        phone: orderData.phone,
+      },
+      deliveryAddress: {
+        addressLine1: orderData.addressLine1,
+        addressLine2: orderData.addressLine2,
+        city: orderData.city,
+        state: orderData.state,
+        zipCode: orderData.zipCode,
+        country: orderData.country,
+      },
+    };
+
+    createOrder(createOrderRequest, {
+      onSuccess: () => toast.success('Create order successfully !'),
+      onError: () => toast.error('Error when create order !'),
+    });
+  };
 
   if (items.length === 0) {
     return (
@@ -209,33 +244,30 @@ export default function Cart() {
                   <span>Shipping</span>
                   <span>Free</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Tax</span>
-                  <span>${(total * 0.1).toFixed(2)}</span>
-                </div>
 
                 <Separator />
 
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span>${(total * 1.1).toFixed(2)}</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
               </div>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="w-full mt-6" size="lg">
-                    Proceed to Checkout
-                  </Button>
-                </DialogTrigger>
+              <Button
+                className="w-full mt-6"
+                size="lg"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Proceed to Checkout
+              </Button>
 
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirm Your Information</DialogTitle>
-                  </DialogHeader>
-                  <OrderModal />
-                </DialogContent>
-              </Dialog>
+              <OrderModal
+                cartItems={items}
+                total={total}
+                onConfirm={handleOrderConfirm}
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+              />
 
               <Button
                 onClick={() => router.replace('/')}

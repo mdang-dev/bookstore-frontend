@@ -4,7 +4,6 @@ import './globals.css';
 import { ThemeProvider } from '@/components/base/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/components/base/query-provider';
-import UserHydrator from '@/modules/user-hydrator';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,9 +37,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <QueryProvider>
-            <UserHydrator /> {children}
-          </QueryProvider>
+          <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
 
         <Toaster />

@@ -1,6 +1,6 @@
 import { ProductSchemaType } from '@/schemas/product.schema';
 
-export type Product = ProductSchemaType & { id: string };
+export type Product = ProductSchemaType;
 
 export type ProductPage = {
   data: Product[];

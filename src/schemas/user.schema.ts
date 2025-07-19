@@ -6,7 +6,7 @@ export const userSchema = z
       .string()
       .min(3, { message: 'Username must be at least 3 characters long.' })
       .max(200, { message: 'Username must be less than 200 characters.' }),
-    email: z.string().email({ message: 'Please enter a valid email address.' }),
+    email: z.email({ message: 'Please enter a valid email address.' }),
     firstName: z.string().nonempty({ message: 'First name is required.' }),
     lastName: z.string().nonempty({ message: 'Last name is required.' }),
     password: z.string().nonempty({ message: 'Password is required.' }),
@@ -18,5 +18,14 @@ export const userSchema = z
     path: ['confirmPassword'],
     message: 'Passwords do not match.',
   });
+
+export const profileSchema = userSchema.pick({
+  firstName: true,
+  lastName: true,
+  email: true,
+  username: true,
+});
+
+export type ProfileSchemaType = z.infer<typeof profileSchema>;
 
 export type UserSchemaType = z.infer<typeof userSchema>;
