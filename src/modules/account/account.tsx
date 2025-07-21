@@ -1,100 +1,39 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Copy, Edit3, Check, LucideIcon } from 'lucide-react';
-
-import { redirect } from 'next/navigation';
+import { User, Mail, Edit3, LogOut } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { profileSchema, ProfileSchemaType } from '@/schemas/user.schema';
 import { getQueryClient } from '@/query-client';
 import { useMutation } from '@tanstack/react-query';
-import { userCommandApi } from '@/apis/user';
-import { UpdateUserRequest } from '@/types/user';
+import { userApi } from '@/apis/user.api';
+import { UpdateUserRequest } from '@/types/user.type';
 import { QUERY_KEYS } from '@/constant/query-keys.constant';
 import { toast } from 'sonner';
-
-interface InfoFieldProps {
-  label: string;
-  id: keyof UpdateUserRequest;
-  icon?: LucideIcon;
-  copyable?: boolean;
-  editable?: boolean;
-  register: ReturnType<typeof useForm<UpdateUserRequest>>['register'];
-  error?: string;
-}
-
-const InfoField = ({
-  label,
-  id,
-  icon: Icon,
-  copyable = false,
-  editable = false,
-  register,
-  error,
-}: InfoFieldProps) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const input = document.getElementById(id) as HTMLInputElement;
-    if (input) {
-      navigator.clipboard.writeText(input.value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <Label
-        htmlFor={id}
-        className="flex items-center gap-2 text-sm font-medium"
-      >
-        {Icon && <Icon className="w-4 h-4" />}
-        {label}
-      </Label>
-      <div className="relative">
-        <Input
-          id={id}
-          readOnly={!editable}
-          {...register(id)}
-          className={`pr-10 ${error ? 'border-red-500' : ''}`}
-        />
-        {copyable && (
-          <button
-            onClick={handleCopy}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100"
-            title="Copy"
-            type="button"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 text-green-500" />
-            ) : (
-              <Copy className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-        )}
-      </div>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-    </div>
-  );
-};
+import Spinner from '@/components/base/spinner';
+import InfoField from './_components/info-field';
+import { authApi } from '@/apis/auth.api';
+import { deleteCookie, getCookie } from '@/utils/cookie.util';
+import { COOKIE_KEYS } from '@/constant/cookie-keys.constant';
+import { useRouter } from 'next/navigation';
 
 export default function Account() {
   const { user, isLoading } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const { mutate: updateProfile } = useMutation({
-    mutationFn: (body: UpdateUserRequest) => userCommandApi.updateProfile(body),
+  const { mutate: updateProfile, isPending } = useMutation({
+    mutationFn: (body: UpdateUserRequest) => userApi.updateProfile(body),
   });
+  const { mutate: logout, isPending: isPendingLogout } = useMutation({
+    mutationFn: (refreshToken: string) => authApi.logout({ refreshToken }),
+  });
+
+  const router = useRouter();
   const client = getQueryClient();
 
   const {
@@ -126,26 +65,44 @@ export default function Account() {
     updateProfile(data, {
       onSuccess: () => {
         client.invalidateQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
-        toast.success('Update profile successfully !');
+        toast.success('Profile updated successfully!');
       },
-      onError: () => toast.error('Error when update profile !'),
+      onError: () => toast.error('Error updating profile'),
       onSettled: () => setIsEditing(false),
     });
+  };
+
+  const handleLogout = async () => {
+    const refreshToken = getCookie(COOKIE_KEYS.REFRESH_TOKEN);
+    if (refreshToken) {
+      logout(refreshToken, {
+        onSuccess: () => {
+          deleteCookie(COOKIE_KEYS.ACCESS_TOKEN);
+          deleteCookie(COOKIE_KEYS.REFRESH_TOKEN);
+          client.removeQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
+          router.replace('/sign-in');
+        },
+        onError: () => toast.error('Error when logout !'),
+      });
+    }
   };
 
   const getInitials = (firstName: string, lastName: string) =>
     `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
 
-  if (isLoading) return <p>Loading...</p>;
-  if (!user) {
-    redirect('/sign-in');
-  }
+  if (isLoading)
+    return (
+      <div className="w-full h-[calc(100vh-120px)] flex justify-center items-center">
+        <Spinner size="large" />
+      </div>
+    );
+  if (!user) return null;
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <div className="grid gap-6 md:grid-cols-3">
         {/* Profile Card */}
-        <Card className="md:col-span-1 bg-gradient-to-br from-blue-300 to-indigo-200 border-0 shadow-lg">
+        <Card className="md:col-span-1 bg-gradient-to-br from-blue-300 to-indigo-200 border-0 shadow-lg relative">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
@@ -159,6 +116,16 @@ export default function Account() {
                 </h2>
                 <p className="text-gray-600">@{user.username}</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                disabled={isPendingLogout}
+                className="mt-4 text-red-600"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Logout
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -167,7 +134,7 @@ export default function Account() {
         <Card className="md:col-span-2 shadow-lg">
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardHeader>
-              <div className="flex items-center justify-between my-auto">
+              <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-bold">
                   Account Details
                 </CardTitle>
@@ -175,7 +142,17 @@ export default function Account() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
+                  onClick={() => {
+                    if (user) {
+                      reset({
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        username: user.username || '',
+                        email: user.email || '',
+                      });
+                    }
+                    setIsEditing(!isEditing);
+                  }}
                 >
                   <Edit3 className="w-4 h-4 mr-1" />
                   {isEditing ? 'Cancel' : 'Edit'}
@@ -208,7 +185,7 @@ export default function Account() {
                   label="Username"
                   id="username"
                   icon={User}
-                  editable={isEditing}
+                  editable={false}
                   copyable
                   register={register}
                   error={errors.username?.message}
@@ -227,16 +204,27 @@ export default function Account() {
                 {isEditing && (
                   <div className="flex gap-3 pt-4">
                     <Button
+                      disabled={isPending}
                       type="submit"
                       className="flex-1 bg-blue-600 hover:bg-blue-700"
                     >
-                      Save Changes
+                      {isPending ? <Spinner size="small" /> : 'Save Changes'}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       className="flex-1"
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => {
+                        if (user) {
+                          reset({
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                            username: user.username || '',
+                            email: user.email || '',
+                          });
+                        }
+                        setIsEditing(false);
+                      }}
                     >
                       Cancel
                     </Button>

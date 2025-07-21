@@ -22,8 +22,8 @@ import { PasswordField } from '@/components/base/password-field';
 import { Form } from '@/components/ui/form';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { authCommandApi } from '@/apis/auth';
-import { AuthRequestType } from '@/types/auth';
+import { authApi } from '@/apis/auth.api';
+import { AuthRequestType } from '@/types/auth.type';
 import { setRefreshTokenCookie, setTokenCookie } from '@/utils/cookie.util';
 
 export default function SignIn() {
@@ -31,7 +31,7 @@ export default function SignIn() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const { mutate: handleLogin, isPending } = useMutation({
-    mutationFn: (body: AuthRequestType) => authCommandApi.login(body),
+    mutationFn: (body: AuthRequestType) => authApi.login(body),
   });
 
   const form = useForm({

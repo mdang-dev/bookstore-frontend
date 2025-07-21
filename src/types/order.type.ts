@@ -20,3 +20,17 @@ export type CreateOrderRequest = {
     country: string;
   };
 };
+
+export type Order = {
+  orderNumber: string;
+  status: string;
+};
+
+export type OrderDetail = CreateOrderRequest & {
+  orderNumber: string;
+  status: string;
+  createdAt: Date;
+  totalAmount: number;
+  comments: string | null;
+  user: string;
+};

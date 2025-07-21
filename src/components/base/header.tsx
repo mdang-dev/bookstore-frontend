@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, User } from 'lucide-react';
+import { ListOrdered, ShoppingCart, User } from 'lucide-react';
 import { ModeToggle } from './mode-toggle';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/stores/cart.store';
@@ -10,12 +10,17 @@ import { Input } from '@/components/ui/input';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useSearchStore } from '@/stores/search.store';
+import { useUser } from '@/hooks/use-user';
+import { useRouter } from 'next/navigation';
+import Hint from './hint';
 
 export function Header() {
   const { itemCount } = useCartStore();
   const [searchValue, setSearchValue] = useState<string>('');
   const debouncedValue = useDebounce(searchValue, 500);
   const { setSearchTerm } = useSearchStore();
+  const { user, isLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     setSearchTerm(debouncedValue);
@@ -49,24 +54,40 @@ export function Header() {
         {/* Right section */}
         <div className="flex items-center gap-3">
           {/* Cart Button */}
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/cart" className="relative">
-              <ShoppingCart className="w-5 h-5" />
-              <Badge
-                className="absolute -top-1 -right-1 text-[10px] px-1 py-0.5"
-                variant="secondary"
-              >
-                {itemCount}
-              </Badge>
-            </Link>
-          </Button>
+          <Hint text="Cart">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/cart" className="relative">
+                <ShoppingCart className="w-5 h-5" />
+                <Badge
+                  className="absolute -top-1 -right-1 text-[10px] px-1 py-0.5"
+                  variant="secondary"
+                >
+                  {itemCount}
+                </Badge>
+              </Link>
+            </Button>
+          </Hint>
 
+          <Hint text="Orders">
+            <Button variant="ghost" size="icon">
+              <Link href="/orders" about="hi">
+                <ListOrdered className="w-5 h-5" />
+              </Link>
+            </Button>
+          </Hint>
           {/* Account/Login */}
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/account">
-              <User className="w-5 h-5" />
-            </Link>
-          </Button>
+          <Hint text="Account">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (user && !isLoading) router.push('/account');
+                else router.push('/sign-in');
+              }}
+            >
+              <User className="w-4 h-4" />
+            </Button>
+          </Hint>
 
           <ModeToggle />
         </div>

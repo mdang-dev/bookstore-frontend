@@ -1,9 +1,9 @@
-import { AuthRequestType, AuthResponseType } from '@/types/auth';
+import { AuthRequestType, AuthResponseType } from '@/types/auth.type';
 import { httpClient } from '@/utils/http-client';
 
 const url = '/auth/api/auth';
 
-export const authCommandApi = {
+export const authApi = {
   login: async (body: AuthRequestType): Promise<AuthResponseType> => {
     const res = await httpClient.post<AuthResponseType>(`${url}/login`, body);
     return res.data;

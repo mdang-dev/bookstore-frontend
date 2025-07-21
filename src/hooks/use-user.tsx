@@ -1,21 +1,26 @@
 'use client';
 
-import { userQueryApi } from '@/apis/user';
+import { userApi } from '@/apis/user.api';
 import { COOKIE_KEYS } from '@/constant/cookie-keys.constant';
 import { QUERY_KEYS } from '@/constant/query-keys.constant';
-import { User } from '@/types/user';
+import { User } from '@/types/user.type';
 import { getCookie } from '@/utils/cookie.util';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 export const useUser = () => {
-  const token = getCookie(COOKIE_KEYS.ACCESS_TOKEN);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const t = getCookie(COOKIE_KEYS.ACCESS_TOKEN);
+    setToken(t ?? null);
+  }, []);
+
   const { data, isLoading, isError } = useQuery<User>({
     queryKey: [QUERY_KEYS.USER_PROFILE],
-    queryFn: userQueryApi.getMyInfo,
+    queryFn: userApi.getMyInfo,
     enabled: !!token,
   });
-
-  console.log('token', token);
 
   return { user: data, isLoading, isError };
 };
