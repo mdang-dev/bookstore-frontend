@@ -12,10 +12,10 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import OrderModal, { OrderData } from './_components/order-modal';
 import { useCallback, useState } from 'react';
 
-import { CreateOrderRequest } from '@/types/order/order.request.type';
+import { CreateOrderRequest } from '@/types/order.type';
 import { useUser } from '@/hooks/use-user';
 import { useMutation } from '@tanstack/react-query';
-import { orderCommandApi } from '@/apis/order';
+import { orderApi } from '@/apis/order.api';
 import { toast } from 'sonner';
 
 export default function Cart() {
@@ -23,7 +23,7 @@ export default function Cart() {
   const { items, total, itemCount, updateQuantity, removeFromCart, clearCart } =
     useCartStore();
   const { mutate: createOrder } = useMutation({
-    mutationFn: (body: CreateOrderRequest) => orderCommandApi.createOrder(body),
+    mutationFn: (body: CreateOrderRequest) => orderApi.createOrder(body),
   });
   const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,7 +56,11 @@ export default function Cart() {
     };
 
     createOrder(createOrderRequest, {
-      onSuccess: () => toast.success('Create order successfully !'),
+      onSuccess: (data) => {
+        toast.success('Create order successfully !');
+        handleCloseModal();
+        router.push('/orders/' + data.orderNumber);
+      },
       onError: () => toast.error('Error when create order !'),
     });
   };

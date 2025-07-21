@@ -1,4 +1,4 @@
-import { authCommandApi } from '@/apis/auth';
+import { authApi } from '@/apis/auth.api';
 import { COOKIE_KEYS } from '@/constant/cookie-keys.constant';
 import { serialize } from 'cookie';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -16,10 +16,9 @@ export default (req: NextApiRequest, res: NextApiResponse) =>
     callbacks: {
       async jwt({ token, account }) {
         if (account) {
-          const { accessToken, refreshToken } =
-            await authCommandApi.loginWithGoogle({
-              accessToken: account?.access_token!,
-            });
+          const { accessToken, refreshToken } = await authApi.loginWithGoogle({
+            accessToken: account?.access_token!,
+          });
 
           const refreshCookie = serialize(
             COOKIE_KEYS.REFRESH_TOKEN,

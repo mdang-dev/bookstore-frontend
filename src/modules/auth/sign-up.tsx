@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { userSchema } from '@/schemas/user.schema';
-import { UserCreateRequestType } from '@/types/user';
+import { CreateUserRequest } from '@/types/user.type';
 
 import {
   Card,
@@ -23,13 +23,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TextField } from '@/components/base/text-field';
 import { PasswordField } from '@/components/base/password-field';
 import { useRouter } from 'next/navigation';
-import { authCommandApi } from '@/apis/auth';
+import { authApi } from '@/apis/auth.api';
 
 export default function SignUp() {
   const [registerError, setRegisterError] = useState('');
   const router = useRouter();
   const { mutate: register, isPending } = useMutation({
-    mutationFn: (body: UserCreateRequestType) => authCommandApi.register(body),
+    mutationFn: (body: CreateUserRequest) => authApi.register(body),
   });
 
   const form = useForm({
@@ -44,7 +44,7 @@ export default function SignUp() {
     },
   });
 
-  const onSubmit = (data: UserCreateRequestType) => {
+  const onSubmit = (data: CreateUserRequest) => {
     setRegisterError('');
     register(data, {
       onSuccess: () => {

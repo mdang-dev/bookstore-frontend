@@ -1,9 +1,9 @@
-import { Product, ProductItems, ProductPage } from '@/types/product';
+import { Product, ProductItems, ProductPage } from '@/types/product.type';
 import { httpClient } from '@/utils/http-client';
 
 const url = '/catalog/api/products';
 
-export const productQueryApi = {
+export const productApi = {
   getProductsByPageNumber: async (page: number = 1): Promise<ProductItems> => {
     const res = await httpClient<ProductPage>(url, { params: { page } });
     return {

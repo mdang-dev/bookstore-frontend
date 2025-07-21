@@ -1,73 +1,90 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
-import { getCookie, setCookie, deleteCookie } from './cookie.util';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import {
+  getCookie,
+  setTokenCookie,
+  setRefreshTokenCookie,
+  deleteCookie,
+} from './cookie.util';
 import { COOKIE_KEYS } from '@/constant/cookie-keys.constant';
-import { AuthResponseType } from '@/types/auth';
-import { redirect } from 'next/navigation';
+import { AuthResponseType } from '@/types/auth.type';
 
 class HttpClient {
-  private _client: AxiosInstance;
-
-  private _baseUrl: string =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-  public get instace() {
-    return this._client;
-  }
+  private readonly instance: AxiosInstance;
 
   constructor() {
-    this._client = axios.create({ baseURL: this._baseUrl, timeout: 10000 });
-
-    this._client.interceptors.request.use((config) => {
-      const token = getCookie(COOKIE_KEYS.ACCESS_TOKEN);
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
+    this.instance = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
+      timeout: 10000,
     });
 
-    this._client.interceptors.response.use(
+    this.instance.interceptors.request.use(this.handleRequest);
+    this.instance.interceptors.response.use(
       (res) => res,
-      (error) => this.handleError(error),
+      this.handleResponseError,
     );
   }
 
-  private async handleError(error: AxiosError) {
-    const original = error.config as AxiosRequestConfig & { _retry?: boolean };
-
-    if (error.response?.status === 401 && !original._retry) {
-      original._retry = true;
-
-      try {
-        const refresh = getCookie(COOKIE_KEYS.REFRESH_TOKEN);
-        if (!refresh) throw new Error('No refresh token');
-
-        const tokens = await this.refreshToken(refresh);
-
-        setCookie(COOKIE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-        setCookie(COOKIE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
-
-        original.headers = {
-          Authorization: `Bearer ${tokens.accessToken}`,
-        };
-
-        return this._client(original);
-      } catch {
-        deleteCookie(COOKIE_KEYS.ACCESS_TOKEN);
-        deleteCookie(COOKIE_KEYS.REFRESH_TOKEN);
-        redirect('/sign-in');
-      }
-    }
-
-    return Promise.reject(error);
+  private handleRequest(config: InternalAxiosRequestConfig) {
+    const token = getCookie(COOKIE_KEYS.ACCESS_TOKEN);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
   }
+
+  private handleResponseError = async (error: AxiosError) => {
+    const original = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const refreshToken = getCookie(COOKIE_KEYS.REFRESH_TOKEN);
+
+    if (
+      error.response?.status !== 401 ||
+      original._retry ||
+      original.url?.includes('/token/refresh') ||
+      !refreshToken
+    )
+      return Promise.reject(error);
+
+    original._retry = true;
+
+    try {
+      const { accessToken, refreshToken: newRefreshToken } =
+        await this.refreshToken(refreshToken);
+
+      setTokenCookie(accessToken);
+      setRefreshTokenCookie(newRefreshToken);
+
+      original.headers = {
+        ...original.headers,
+        Authorization: `Bearer ${accessToken}`,
+      };
+
+      return this.instance(original);
+    } catch {
+      this.logout();
+      return Promise.reject(error);
+    }
+  };
 
   private async refreshToken(token: string): Promise<AuthResponseType> {
-    const res = await axios.post<AuthResponseType>(
-      `${this._baseUrl}/token/refresh`,
+    const { data } = await axios.post<AuthResponseType>(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/api/auth/token/refresh`,
       { refreshToken: token },
     );
-    return res.data;
+    return data;
+  }
+
+  private logout() {
+    deleteCookie(COOKIE_KEYS.ACCESS_TOKEN);
+    deleteCookie(COOKIE_KEYS.REFRESH_TOKEN);
+    window.location.href = '/sign-in';
+  }
+
+  public getInstance(): AxiosInstance {
+    return this.instance;
   }
 }
 
-export const httpClient = new HttpClient().instace;
+export const httpClient = new HttpClient().getInstance();
